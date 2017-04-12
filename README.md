@@ -19,3 +19,6 @@ Requirements:
 
 example: (to run on GPU using theano)
 THEANO_FLAGS=floatX=float32,device=cuda0,nvcc.flags=-D_FORCE_INLINES python deepsensing_categorical.py 
+
+The two images used as training and testing data in the provided example where taken from the Zurich dataset:
+Volpi, M. & Ferrari, V.; Semantic segmentation of urban scenes by learning local class interactions, In IEEE CVPR 2015 Workshop "Looking from above: when Earth observation meets vision" (EARTHVISION), Boston, USA, 2015.
