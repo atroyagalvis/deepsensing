@@ -74,40 +74,6 @@ class batchGenerator:
           return X,y
 
 
-"""
-perform random transformations on the raw and target images
-code modified from keras github to be able to apply the same transformation to both images
-"""
-def data_augmentation(raw, labels,row_axis=1, col_axis=2, channel_axis=0,
-                    fill_mode='nearest', cval=0.):
-  trans = ['rotation', 'shift', 'shear', 'zoom', 'flip']
-  print raw.shape
-  n = np.random.randint(len(trans))
-  n = 0
-  if n == 0:
-    rg = 90
-    theta = np.pi / 180 * np.random.uniform(-rg, rg)
-    rotation_matrix = np.array([[np.cos(theta), -np.sin(theta), 0],
-                                [np.sin(theta), np.cos(theta), 0],
-                                [0, 0, 1]])
-    h, w = raw.shape[row_axis], raw.shape[col_axis]
-    print h,w
-    transform_matrix = image.transform_matrix_offset_center(rotation_matrix, h, w)
-    print "aha"
-    raw = image.apply_transform(raw, transform_matrix, channel_axis, fill_mode, cval)  
-    print transform_matrix.shape
-    labels = image.apply_transform(labels, transform_matrix, channel_axis, fill_mode, cval)  
-    print "ok"
-  elif n == 1:
-    print "not implemented"
-  elif n == 2:
-    print "not implemented"
-  elif n == 3:
-    print "not implemented"
-  elif n == 4:
-    print "not implemented"
-  return raw,labels
-
 
 """
 Makes predictions given a model and an raw image file
@@ -277,7 +243,7 @@ epocs : the number of epocs to train
 samples_per_epoch : number of samples to use per epoch
 nb_val_samples : number of validation samples to use per epoch
 """
-def fit_model(model, generatordata,epocs=20, samples_per_epoch=9000, nb_val_samples=1000,  weightfile="weights.h5",early_stopping=True, patience = 0):
+def fit_model(model, generatordata,generatordata_test=None,epocs=20, samples_per_epoch=9000, nb_val_samples=1000,  weightfile="weights.h5",early_stopping=True, patience = 0):
   print("fitting model")
   try:
     #for i in xrange(epocs):
@@ -286,11 +252,20 @@ def fit_model(model, generatordata,epocs=20, samples_per_epoch=9000, nb_val_samp
         callbacks = [EarlyStopping(monitor='val_loss', min_delta=0, patience=patience, verbose=1, mode='auto')]
       else:
         callbacks = []
-      model.fit_generator(generatordata,
+      if generatordata_test is None:
+        model.fit_generator(generatordata,
                       steps_per_epoch=samples_per_epoch,
                       validation_steps=nb_val_samples,
                       epochs=epocs,
                       validation_data=generatordata,
+                      callbacks=callbacks
+                      )
+      else:
+        model.fit_generator(generatordata,
+                      steps_per_epoch=samples_per_epoch,
+                      validation_steps=nb_val_samples,
+                      epochs=epocs,
+                      validation_data=generatordata_test,
                       callbacks=callbacks
                       )
   except KeyboardInterrupt:      
