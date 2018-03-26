@@ -8,7 +8,8 @@ from keras import initializers
 from keras.models import Model
 from  keras import backend as K
 import keras
-import theano
+import tensorflow as tf
+
 
 def VGG16_like_fine_tuning(img_bands = 4, img_rows = 64, img_cols = 64):
   input_img = Input(shape=(img_bands, img_rows, img_cols))
@@ -302,16 +303,16 @@ filter_depth : list of the number of filters for each main block len(filter_dept
   current_depth = 64 
   res_net = Conv2D(current_depth, (7, 7), activation='relu', padding='same', strides=2, data_format="channels_first", name='resnet_first_conv', trainable=True)(input_img)
   res_net = MaxPooling2D((2, 2), padding='same', data_format="channels_first", name='pool')(res_net)
-  for b in xrange(nb_blocks):
+  for b in range(nb_blocks):
     if len(res_blocks) == 1:#same number of residual blocks
-      for rb in xrange(res_blocks[0]):
+      for rb in range(res_blocks[0]):
         if rb == res_blocks[0]-1 and b != nb_blocks-1:
           res_net = residual_block(img_rows, img_cols, in_filters=current_depth, out_filters=filter_depth[b+1], name='resblock'+str(rb))(res_net)
         else:
           res_net = residual_block(img_rows, img_cols, in_filters=current_depth, out_filters=filter_depth[b], name='resblock'+str(rb))(res_net)          
     else:
       assert len(res_blocks)==nb_blocks, "res_blocks should have either 1 or nb_blocks elements"
-      for rb in xrange(res_blocks[b]):
+      for rb in range(res_blocks[b]):
         if rb == res_blocks[b]-1 and b != nb_blocks-1: 
           res_net = residual_block(img_rows, img_cols, in_filters=current_depth, out_filters=filter_depth[b+1], name='resblock'+str(rb))(res_net)
         else:
@@ -340,16 +341,16 @@ filter_depth : list of the number of filters for each main block len(filter_dept
   current_depth = 64 
   res_net = Conv2D(current_depth, (7, 7), activation='relu', padding='same', strides=2, data_format="channels_first", name='resnet_first_conv', trainable=True,kernel_initializer=initializer)(input_img)
   res_net = MaxPooling2D((2, 2), padding='same', data_format="channels_first", name='pool')(res_net)
-  for b in xrange(nb_blocks):
+  for b in range(nb_blocks):
     if len(res_blocks) == 1:#same number of residual blocks
-      for rb in xrange(res_blocks[0]):
+      for rb in range(res_blocks[0]):
         if rb == res_blocks[0]-1 and b != nb_blocks-1:
           res_net = residual_block_post_activation(img_rows, img_cols, in_filters=current_depth, out_filters=filter_depth[b+1], name='resblock'+str(rb))(res_net)
         else:
           res_net = residual_block_post_activation(img_rows, img_cols, in_filters=current_depth, out_filters=filter_depth[b], name='resblock'+str(rb))(res_net)          
     else:
       assert len(res_blocks)==nb_blocks, "res_blocks should have either 1 or nb_blocks elements"
-      for rb in xrange(res_blocks[b]):
+      for rb in range(res_blocks[b]):
         if rb == res_blocks[b]-1 and b != nb_blocks-1: 
           res_net = residual_block_post_activation(img_rows, img_cols, in_filters=current_depth, out_filters=filter_depth[b+1], name='resblock'+str(rb))(res_net)
         else:
@@ -375,7 +376,7 @@ def conv_pool_dense_net(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks=4,
   assert len(filter_depth) == nb_blocks, "filter_depth should have nb_blocks elements"
   input_img = Input(shape=(img_bands, img_rows, img_cols))
   net = input_img
-  for b in xrange(nb_blocks):
+  for b in range(nb_blocks):
    
     if len(in_blocks) == 1:#same number of residual blocks
       blocks = in_blocks[0]
@@ -383,12 +384,12 @@ def conv_pool_dense_net(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks=4,
       assert len(in_blocks)==nb_blocks, "res_blocks should have either 1 or nb_blocks elements"
       blocks = in_blocks[b]   
     
-    for rb in xrange(blocks):
+    for rb in range(blocks):
       net = Conv2D(filter_depth[b], (3, 3), activation='relu', padding='same', data_format="channels_first", name='block'+str(b)+'_conv'+str(rb) , trainable=True)(net)
       net = Dropout(droprate)(net)
     net = MaxPooling2D((2, 2), padding='same', data_format="channels_first", name='block'+str(b)+'_pool')(net)    
   output = Flatten()(net)
-  for d in xrange(dense_layers):
+  for d in range(dense_layers):
     output = Dense(1024,activation='relu', name="dense_layer"+str(d))(output)
     output = Dropout(droprate)(output)
   if categorical:
@@ -406,7 +407,7 @@ def conv_pool_transconv_net(img_bands = 4, img_rows = 64, img_cols = 64,nb_block
   assert len(filter_depth) == nb_blocks, "filter_depth should have nb_blocks elements"
   input_img = Input(shape=(img_bands, img_rows, img_cols))
   net = input_img
-  for b in xrange(nb_blocks):
+  for b in range(nb_blocks):
    
     if len(in_blocks) == 1:#same number of residual blocks
       blocks = in_blocks[0]
@@ -414,7 +415,7 @@ def conv_pool_transconv_net(img_bands = 4, img_rows = 64, img_cols = 64,nb_block
       assert len(in_blocks)==nb_blocks, "res_blocks should have either 1 or nb_blocks elements"
       blocks = in_blocks[b]   
     
-    for rb in xrange(blocks):
+    for rb in range(blocks):
       net = Conv2D(filter_depth[b], (3, 3), activation='relu', padding='same', data_format="channels_first", name='block'+str(b)+'_conv'+str(rb) , trainable=True)(net)
       net = Dropout(droprate)(net)
     net = Conv2D(filter_depth[b],(3, 3), strides=2, padding='same', data_format="channels_first", name='block'+str(b)+'_pool')(net)    
@@ -440,7 +441,7 @@ def conv_pool_dense_net_BN(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks
   assert len(filter_depth) == nb_blocks, "filter_depth should have nb_blocks elements"
   input_img = Input(shape=(img_bands, img_rows, img_cols))
   net = input_img
-  for b in xrange(nb_blocks):
+  for b in range(nb_blocks):
     if len(in_blocks) == 1:#same number of internal blocks
       blocks = in_blocks[0]
     else:
@@ -448,13 +449,13 @@ def conv_pool_dense_net_BN(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks
       blocks = in_blocks[b]   
     
     net = BatchNormalization(axis=1)(net)
-    for rb in xrange(blocks):
+    for rb in range(blocks):
       net = Conv2D(filter_depth[b], (3, 3), activation='relu', padding='same', data_format="channels_first", name='block'+str(b)+'_conv'+str(rb) , trainable=True)(net)
     net = MaxPooling2D((2, 2), padding='same', data_format="channels_first", name='block'+str(b)+'_pool')(net)    
     net = Dropout(droprate)(net)
   net = BatchNormalization(axis=1)(net)
   output = Flatten()(net)
-  for d in xrange(dense_layers):
+  for d in range(dense_layers):
     output = Dense(1024,activation='relu', name="dense_layer"+str(d))(output)
     output = Dropout(droprate)(output)
   if categorical:
@@ -471,7 +472,7 @@ def collaborative_net(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks=4, i
   net = conv_pool_dense_net_BN(img_bands = img_bands, img_rows = img_rows, img_cols = img_cols, nb_blocks=nb_blocks, in_blocks=in_blocks, filter_depth=filter_depth, dense_layers=dense_layers ,categorical=categorical,nb_classes=nb_classes)(input_img)
   #create alternative branching for each class
   class_outputs = []
-  for c in xrange(nb_classes):  
+  for c in range(nb_classes):  
     class_output = Conv2D(64, (3, 3), activation='relu', padding='same', data_format="channels_first", name='class'+str(c)+'_conv', trainable=True)(net)
     class_output = Dropout(droprate)(class_output)
     class_output = Conv2DTranspose(1, (3, 3), strides=2, activation='relu', padding='same', data_format="channels_first", name='deconv_class'+str(c) , trainable=True)(class_output)     
@@ -488,7 +489,7 @@ def collaborative_net(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks=4, i
 def full_dense(img_bands = 4, img_rows = 64, img_cols = 64, neurons=1024, hidden_layers=1,categorical=False,nb_classes=-1, droprate=0.5):
   input_img = Input(shape=(img_bands, img_rows, img_cols))
   net = Flatten()(input_img)
-  for i in xrange(hidden_layers):
+  for i in range(hidden_layers):
     net = Dense(neurons, activation='relu',name='full_dense_'+str(i))(net)
     net = Dropout(droprate)(net)
   if categorical:
@@ -502,31 +503,29 @@ def full_dense(img_bands = 4, img_rows = 64, img_cols = 64, neurons=1024, hidden
 
 def softArgmax(tensor, axis=1, n=0, beta=10, size=32):
   epsilon = 0.0001
-  i = np.asarray([ np.full((size,size),i) for i in xrange(n)]).astype('float32')
+  i = np.asarray([ np.full((size,size),i) for i in range(n)])
   i = np.expand_dims(i,0)
   tensor = tensor*beta
   shift = tensor - tensor.max()
   e = K.exp(shift)
   s = K.sum(e, axis=axis)+epsilon
-  s = s.dimshuffle((0, 'x', 1, 2)) 
+  s = tf.expand_dims(s, 1) 
   r = K.sum((e/s)*i,axis=axis)
-  return r.astype('float32').dimshuffle((0, 'x', 1, 2))
+  return tf.expand_dims(r, 1)
 
 
 def Argmax(tensor, axis=1, n=0):
-  return K.argmax(tensor, axis=axis).astype('float32').dimshuffle((0, 'x', 1, 2))
+  return tf.expand_dims(K.argmax(tensor, axis=axis), 1)
 
 def ArgMaxOutput(input_shape):
   return (None,1,input_shape[2],input_shape[3])
-
-import layers 
 
 def collaborative_net_argmax(img_bands = 4, img_rows = 64, img_cols = 64,nb_blocks=4, in_blocks=[3,4,6,3], filter_depth=[64,128,256,512], dense_layers=1 ,categorical=False,nb_classes=-1, droprate=0.5):
   input_img = Input(shape=(img_bands, img_rows, img_cols))
   net = conv_pool_dense_net_BN(img_bands = img_bands, img_rows = img_rows, img_cols = img_cols, nb_blocks=nb_blocks, in_blocks=in_blocks, filter_depth=filter_depth, dense_layers=dense_layers ,categorical=categorical,nb_classes=nb_classes)(input_img)
   #create alternative branching for each class
   class_outputs = []
-  for c in xrange(nb_classes):  
+  for c in range(nb_classes):  
     class_output = Conv2D(64, (3, 3), activation='relu', padding='same', data_format="channels_first", name='class'+str(c)+'_conv', trainable=True)(net)
     class_output = Dropout(droprate)(class_output)
     class_output = Conv2DTranspose(1, (3, 3), strides=2, activation='tanh', padding='same', data_format="channels_first", name='deconv_class'+str(c) , trainable=True)(class_output)     
@@ -544,7 +543,7 @@ def collaborative_net_softargmax(img_bands = 4, img_rows = 64, img_cols = 64,nb_
   net = conv_pool_dense_net_BN(img_bands = img_bands, img_rows = img_rows, img_cols = img_cols, nb_blocks=nb_blocks, in_blocks=in_blocks, filter_depth=filter_depth, dense_layers=dense_layers ,categorical=categorical,nb_classes=nb_classes)(input_img)
   #create alternative branching for each class
   class_outputs = []
-  for c in xrange(nb_classes):  
+  for c in range(nb_classes):  
     class_output = Conv2D(64, (3, 3), activation='relu', padding='same', data_format="channels_first", name='class'+str(c)+'_conv', trainable=True)(net)
     class_output = Dropout(droprate)(class_output)
     class_output = Conv2DTranspose(1, (3, 3), strides=2, activation='tanh', padding='same', data_format="channels_first", name='deconv_class'+str(c) , trainable=True)(class_output)     
@@ -562,7 +561,7 @@ def collaborative_net_softmax(img_bands = 4, img_rows = 64, img_cols = 64,nb_blo
   net = conv_pool_dense_net_BN(img_bands = img_bands, img_rows = img_rows, img_cols = img_cols, nb_blocks=nb_blocks, in_blocks=in_blocks, filter_depth=filter_depth, dense_layers=dense_layers ,categorical=categorical,nb_classes=nb_classes)(input_img)
   #create alternative branching for each class
   class_outputs = []
-  for c in xrange(nb_classes):  
+  for c in range(nb_classes):  
     class_output = Conv2D(64, (3, 3), activation='relu', padding='same', data_format="channels_first", name='class'+str(c)+'_conv', trainable=True)(net)
     class_output = Dropout(droprate)(class_output)
     class_output = Conv2DTranspose(1, (3, 3), strides=2, activation='relu', padding='same', data_format="channels_first", name='deconv_class'+str(c) , trainable=True)(class_output)     
@@ -691,7 +690,7 @@ def conv_pool_transconv_one_hot(img_bands = 4, img_rows = 64, img_cols = 64,nb_b
   assert len(filter_depth) == nb_blocks, "filter_depth should have nb_blocks elements"
   input_img = Input(shape=(img_bands, img_rows, img_cols))
   net = input_img
-  for b in xrange(nb_blocks):
+  for b in range(nb_blocks):
    
     if len(in_blocks) == 1:#same number of residual blocks
       blocks = in_blocks[0]
@@ -699,7 +698,7 @@ def conv_pool_transconv_one_hot(img_bands = 4, img_rows = 64, img_cols = 64,nb_b
       assert len(in_blocks)==nb_blocks, "res_blocks should have either 1 or nb_blocks elements"
       blocks = in_blocks[b]   
     
-    for rb in xrange(blocks):
+    for rb in range(blocks):
       net = Conv2D(filter_depth[b], (3, 3), activation='relu', padding='same', data_format="channels_first", name='block'+str(b)+'_conv'+str(rb) , trainable=True)(net)
       net = Dropout(droprate)(net)
     net = Conv2D(filter_depth[b],(3, 3), strides=2, padding='same', data_format="channels_first", name='block'+str(b)+'_pool')(net)    

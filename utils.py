@@ -7,7 +7,7 @@ import os
 from keras.preprocessing.image import ImageDataGenerator
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from  keras import backend as K
-
+import tensorflow as tf
 
 def standardize_image(a):
   """
@@ -49,8 +49,9 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
          # for f in files:
          #   if os.path.isfile(f):
          #     data = gdal.Open(f)
-        print "generating batches on image", imagefile      
+        print( "generating batches on image", imagefile)
         self.data = gdal.Open(imagefile)
+        print(self.data)
         self.random = random
         self.categorical = categorical
         self.nb_classes = nb_classes
@@ -58,7 +59,7 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
         self.xsize = self.data.RasterXSize
         self.ysize = self.data.RasterYSize
         #
-        print "preprocessing image"
+        print("preprocessing image")
         self.image = standardize_image(self.data.ReadAsArray())
         #self.image = zca_whitening(self.image)
         if vtfile is not 'autoencode':
@@ -81,11 +82,11 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
     def __iter__(self):
         return self
 
-    def next(self):       
+    def __next__(self):       
         with self.lock:
           X = []
           y = []
-          for b in xrange(self.batch_size):
+          for b in range(self.batch_size):
             if self.random:
               if self.possible_coords is not None:
                 rx = 0
@@ -124,7 +125,7 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
               if self.collaborative:
                 class_channels = []
                 assert self.nb_classes != -1, "nb_classes has to be specified for the collaborative model"
-                for c in xrange(self.nb_classes):
+                for c in range(self.nb_classes):
                   class_channels.append((label_img==c).astype(np.int))
                 if self.softmax:
                   labels = np.asarray(class_channels).reshape(1,self.nb_classes,self.tilesize,self.tilesize)
@@ -149,7 +150,7 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
           return X,y
 
 
-class batchGeneratorFolder:
+class batchGeneratorFolder(object):
     """
 generator to produce training image tile couples (image tile, labels) 
 imagefile : string containing the path to the raw image to load
@@ -163,8 +164,8 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
          # for f in files:
          #   if os.path.isfile(f):
          #     data = gdal.Open(f)
-        print "training on folder", folder
-        print "validation image", validation_img
+        print( "training on folder", folder)
+        print( "validation image", validation_img)
         self.training_images = []
         self.training_labels = []
         self.imagenames = []
@@ -177,7 +178,7 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
               self.imagenames.append(dir)
               self.training_labels.append(gdal.Open(folder+"labels"+dir).ReadAsArray()) #label images should all have the same name as the raw image and prefix "labels"
               self.training_images.append(standardize_image(gdal.Open(folder+dir).ReadAsArray()))
-        print  self.imagenames
+        print(self.imagenames)
         self.random = random
         self.categorical = categorical
         self.nb_classes = nb_classes
@@ -189,16 +190,16 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
         self.target_class = target_class
         self.collaborative = collaborative
         self.softmax = softmax
-        
+        print("kaka")
 
     def __iter__(self):
         return self
 
-    def next(self):       
+    def __next__(self):       
         with self.lock:
           X = []
           y = []
-          for b in xrange(self.batch_size):
+          for b in range(self.batch_size):
             imageindex = np.random.randint(len(self.training_images))
             self.image = self.training_images[imageindex]
             self.imagevt = self.training_labels[imageindex]
@@ -238,7 +239,7 @@ NOTE: imagefile and vtfile should correspond to the exact same area otherwise th
               if self.collaborative:
                 class_channels = []
                 #assert self.nb_classes != -1, "nb_classes has to be specified for the collaborative model"
-                for c in xrange(self.nb_classes):
+                for c in range(self.nb_classes):
                   class_channels.append((label_img==c).astype(np.int))
                 if self.softmax:
                   labels = np.asarray(class_channels).reshape(1,self.nb_classes,self.tilesize,self.tilesize)
@@ -321,8 +322,8 @@ outputimg : the target path in which the predictions are stored
   outdata.SetGeoTransform(trans)
   outdata.SetProjection(proj)
   
-  for i in xrange(xchunks):
-    for j in xrange(ychunks):
+  for i in range(xchunks):
+    for j in range(ychunks):
       X = np.asarray([ image[:,j*tilesize:j*tilesize+tilesize,i*tilesize:i*tilesize+tilesize] ])
       _,_,w,h = X.shape
       if h != tilesize:
@@ -347,7 +348,7 @@ tilesize : the size of each tile (should correspond to the tile size used for tr
 outputimg : the target path in which the predictions are stored
 """  
   print("Predicting image "+imagefile)
-  print "saving prediction in", outputimg
+  print("saving prediction in", outputimg)
   data = gdal.Open(imagefile)
   xsize = data.RasterXSize
   ysize = data.RasterYSize
@@ -376,8 +377,8 @@ outputimg : the target path in which the predictions are stored
   outdata.SetGeoTransform(trans)
   outdata.SetProjection(proj)
   
-  for i in xrange(xchunks):
-    for j in xrange(ychunks):
+  for i in range(xchunks):
+    for j in range(ychunks):
       X = np.asarray([ image[:,j*tilesize:j*tilesize+tilesize,i*tilesize:i*tilesize+tilesize] ])
       _,_,w,h = X.shape
       if h != tilesize:
@@ -386,7 +387,7 @@ outputimg : the target path in which the predictions are stored
         X = np.pad(X, ((0,0),(0,0),(0,tilesize-w),(0,0)), mode='constant')
       pred = model.predict(X,verbose=0)
       if save_all:
-        for c in xrange(nb_outputs): 
+        for c in range(nb_outputs): 
           predtile = pred[c]       
           band = outdata.GetRasterBand(c+1)
           xoff = i*tilesize
@@ -410,7 +411,7 @@ tilesize : the size of each tile (should correspond to the tile size used for tr
 outputimg : the target path in which the predictions are stored
 """  
   print("Predicting image "+imagefile)
-  print "saving prediction in", outputimg
+  print("saving prediction in", outputimg)
   data = gdal.Open(imagefile)
   xsize = data.RasterXSize
   ysize = data.RasterYSize
@@ -436,8 +437,8 @@ outputimg : the target path in which the predictions are stored
   outdata.SetGeoTransform(trans)
   outdata.SetProjection(proj)
   
-  for i in xrange(xchunks):
-    for j in xrange(ychunks):
+  for i in range(xchunks):
+    for j in range(ychunks):
       X = np.asarray([ image[:,j*tilesize:j*tilesize+tilesize,i*tilesize:i*tilesize+tilesize] ])
       _,_,w,h = X.shape
       if h != tilesize:
@@ -487,8 +488,8 @@ outputimg : the target path in which the predictions are stored
   outdata.SetGeoTransform(trans)
   outdata.SetProjection(proj)
 
-  for i in xrange(0,xsize,tilesize):
-    for j in xrange(0,ysize,tilesize): 
+  for i in range(0,xsize,tilesize):
+    for j in range(0,ysize,tilesize): 
       X = np.asarray([ image[:,j:j+tilesize,i:i+tilesize]])
       _,_,w,h = X.shape
       if h != tilesize:
@@ -507,7 +508,7 @@ outputimg : the target path in which the predictions are stored
       try:
         band.WriteArray(labelpatch, i, j)
       except:
-        print i,j, labelpatch.shape
+        print(i,j, labelpatch.shape)
       outdata.FlushCache()
   outdata.FlushCache()
 
@@ -549,8 +550,8 @@ outputimg : the target path in which the predictions are stored
   samples = 0
   X = []
   indexes = []
-  for i in xrange(0,xsize,centersize):
-    for j in xrange(0,ysize,centersize): 
+  for i in range(0,xsize,centersize):
+    for j in range(0,ysize,centersize): 
       if  i-tilesize/2 >= 0 and i+tilesize/2 < xsize and j-tilesize/2 >= 0 and j+tilesize/2 < ysize:
         X.append(image[:,j-tilesize/2:j+tilesize/2,i-tilesize/2:i+tilesize/2])
         indexes.append((i,j))
@@ -567,7 +568,7 @@ outputimg : the target path in which the predictions are stored
             try:
               band.WriteArray(labelpatch, inds[0], inds[1])
             except:
-              print i,j, labelpatch.shape
+              print( i,j, labelpatch.shape)
           X = []
           indexes = []
           samples = 0
@@ -656,7 +657,7 @@ nb_val_samples : number of validation samples to use per epoch
                  save_best_only=True, save_weights_only=False,
                  mode='auto', period=1))      
       for epoch in range(epocs):
-        for i in xrange(len(training_images)):
+        for i in range(len(training_images)):
           if i != validation_img_ind:
             generatordata, generatordata_test = get_batch_generator(model, training_images[i],training_labels[i], training_images[validation_img_ind], training_labels[validation_img_ind], batch_size,augment_data=True, nb_classes=nb_classes)
             if generatordata_test is None:
@@ -836,19 +837,19 @@ outimg : the target path of the converted image
   if lookup is None: 
     labelindex = {}
     label = 0
-    for i in xrange(h):
-      for j in xrange(w):
+    for i in range(h):
+      for j in range(w):
         pix = int(str(im[0][i][j])+str(im[1][i][j])+str(im[2][i][j]))
         if not labelindex.has_key(pix):
           labelindex[pix] = label
           label += 1
         labelimg[i][j] = labelindex[pix]
   else:
-    for i in xrange(h):
-      for j in xrange(w):
+    for i in range(h):
+      for j in range(w):
         label = (im[0][i][j],im[1][i][j],im[2][i][j])
         if not lookup.has_key(label):
-          print "warning unknown label",label
+          print("warning unknown label",label)
           labelimg[i][j] = -1
         else:
           labelimg[i][j] = lookup[label]
@@ -872,7 +873,7 @@ def write_array_as_tif(array,outname, trans = None, proj=None,xoff=0,yoff=0, rou
     array = np.asarray([array])
     c = 1
   else:
-    print array.shape, 'incompatible array shape'
+    print( array.shape, 'incompatible array shape')
     return
 
   outdriver = gdal.GetDriverByName("GTiff")
@@ -885,7 +886,7 @@ def write_array_as_tif(array,outname, trans = None, proj=None,xoff=0,yoff=0, rou
     outdata.SetGeoTransform(trans2)
   if(proj is not None):
     outdata.SetProjection(proj)  
-  for ch in xrange(c):
+  for ch in range(c):
     band = outdata.GetRasterBand(ch+1)
     if round_values:
       band.WriteArray(np.round(array[ch,:,:]), 0, 0)
@@ -897,7 +898,7 @@ def write_array_as_tif(array,outname, trans = None, proj=None,xoff=0,yoff=0, rou
 def softmax(t):
   shift = t-K.max(t)
   e = K.exp(shift)
-  s = K.sum(e,axis=1).dimshuffle((0, 'x', 1, 2))
+  s = tf.expand_dims(K.sum(e,axis=1), 1)
   return e/s
 
 #y_pred shape should be (S,N,W,H) where S id the number of predicted samples, N is the number of possible classes, W and H are the width and height of the predicted patch
@@ -936,16 +937,16 @@ offset : the number of pixels to ignore at the border of the images
   predicted = gdal.Open(p_img).ReadAsArray()
   reference = gdal.Open(r_img).ReadAsArray()
   nb_classes = int(max(round(reference.max()),round(predicted.max())))+1
-  print nb_classes
+  print( nb_classes)
   matrice = np.zeros((nb_classes,nb_classes))
   
-  print "assuming ", nb_classes, " classes"
+  print( "assuming ", nb_classes, " classes")
   assert reference.min >= 0, "cannot deal with negative labels"
   assert len(predicted.shape)==2, "images should have only 1 channel"  
   assert predicted.shape == reference.shape, "images should have the same dimensions"
   h,w = predicted.shape
-  for i in xrange(offset,h-offset):
-    for j in xrange(offset,w-offset):
+  for i in range(offset,h-offset):
+    for j in range(offset,w-offset):
       matrice[int(round(predicted[i][j]))][int(round(reference[i][j]))] += 1 
   return matrice      	
 

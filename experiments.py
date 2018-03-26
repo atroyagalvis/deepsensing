@@ -1,8 +1,6 @@
 import numpy as np
 np.random.seed(1337)  # for reproducibility
 import models
-import visualize_history
-import predict
 import utils
 from keras import optimizers
 from keras import regularizers
@@ -11,17 +9,17 @@ import gdal
 import csv
 import pickle
 
-train_on_folder = True
+train_on_folder = False
 train = True
 
-training_folder = "./img_zurich/train/"
-testing_folder = "./img_zurich/test/"
-test_label_img = "img_zurich/test/labelszh11.tif"#"img_Strasbg/labels_strasbourg_test.tif"#
-train_label_img = "img_zurich/train/labelszh16.tif"#"img_Strasbg/labels_strasbourg_reliable.tif"#"img_Strasbg/labels_strasbourg_train.tif"#
-validation_label_img = 'img_zurich/train/labelszh12.tif'#"img_Strasbg/labels_strasbourg_validation.tif" #
-test_img = "img_zurich/test/zh11.tif"#"img_Strasbg/strasbourg_test.tif"#"img_Strasbg/strasbourg_test.tif"#
-train_img = "img_zurich/train/zh16.tif"#"img_Strasbg/strasbourg.tif"#"img_Strasbg/strasbourg_train.tif"#
-validation_img = 'img_zurich/train/zh12.tif'#"img_Strasbg/strasbourg_validation.tif"#
+training_folder = "./data/train/"
+testing_folder = "./data/test/"
+test_label_img = "data/test/labelszh11.tif"#"img_Strasbg/labels_strasbourg_test.tif"#
+train_label_img = "data/train/labelszh16.tif"#"img_Strasbg/labels_strasbourg_reliable.tif"#"img_Strasbg/labels_strasbourg_train.tif"#
+validation_label_img = 'data/train/labelszh12.tif'#"img_Strasbg/labels_strasbourg_validation.tif" #
+test_img = "data/test/zh11.tif"#"img_Strasbg/strasbourg_test.tif"#"img_Strasbg/strasbourg_test.tif"#
+train_img = "data/train/zh16.tif"#"img_Strasbg/strasbourg.tif"#"img_Strasbg/strasbourg_train.tif"#
+validation_img = 'data/train/zh12.tif'#"img_Strasbg/strasbourg_validation.tif"#
 
 predicted_img = "prediction_residual.tif"
 #trainlabels = gdal.Open(train_label_img).ReadAsArray()
@@ -44,7 +42,7 @@ def set_regularization(model):
     l.kernel_regularizer=regularizers.l2(0.01)
     l.activity_regularizer=regularizers.l1(0.01)
 
-print 'instantiating models'
+print( 'instantiating models')
 #instantiate all tested models
 tested_models = {}
 #tested_models['full_dense'] = models.full_dense(img_bands, img_rows, img_cols, hidden_layers=convs, categorical=False, droprate=droprate)
@@ -88,21 +86,21 @@ if train:
       model.compile(optimizer=opt, loss=utils.spatial_cat_crossesntropy,metrics = [utils.accuracy_one_hot])
       monitor_metric='val_accuracy_one_hot'
     
-    print 'train :', modelname    
+    print( 'train :', modelname    )
     weights_path = expe_prefix+modelname+".h5" 
     if train_on_folder:
-      print "train on folder"
+      print( "train on folder")
       generatordata, generatordata_test = utils.get_batch_generator(model, training_folder,None, validation_img, validation_label_img, batch_size,augment_data=True, nb_classes=nb_classes)
     else:
-      print "train with one image"
+      print ("train with one image")
       generatordata, generatordata_test = utils.get_batch_generator(model, train_img,train_label_img, validation_img, validation_label_img, batch_size,augment_data=True, nb_classes=nb_classes)
-    data_test = generatordata_test.next()
+    data_test = next(generatordata_test)
     history = utils.fit_model(model,generatordata,data_test,epocs = epochs, samples_per_epoch=train_samples, nb_val_samples=test_samples,early_stopping=False, weightfile = weights_path, save_best=True,monitor=monitor_metric)  
     
     training_histories[modelname] = history
 
       
-  print training_histories
+  print (training_histories)
   historyfile = expe_prefix+'histories.csv'
   with open(historyfile, 'wb') as csv_file:
       writer = csv.writer(csv_file)
