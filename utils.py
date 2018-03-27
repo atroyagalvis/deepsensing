@@ -898,7 +898,7 @@ def write_array_as_tif(array,outname, trans = None, proj=None,xoff=0,yoff=0, rou
 def softmax(t):
   shift = t-K.max(t)
   e = K.exp(shift)
-  s = tf.expand_dims(K.sum(e,axis=1), 1)
+  s = tf.expand_dims(K.sum(e,axis=1), 1)+K.epsilon
   return e/s
 
 #y_pred shape should be (S,N,W,H) where S id the number of predicted samples, N is the number of possible classes, W and H are the width and height of the predicted patch
